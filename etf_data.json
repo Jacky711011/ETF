@@ -2,7 +2,7 @@
     "0056": { "name": "元大高股息", "price": 40.5, "months": [1, 4, 7, 10], "dividend": 3.6, "perTime": 0.9 },
     "00878": { "name": "國泰永續高股息", "price": 23.1, "months": [2, 5, 8, 11], "dividend": 1.46, "perTime": 0.365 },
     "00919": { "name": "群益台灣精選高息", "price": 25.8, "months": [3, 6, 9, 12], "dividend": 2.8, "perTime": 0.7 },
-    "00929": { "name": "復華台灣科技優息", "price": 19.5, "months": [1,2,3,4,5,6,7,8,9,10,11,12], dividend: 2.4, perTime: 0.2 },
+    "00929": { "name": "復華台灣科技優息", "price": 19.5, "months": [1,2,3,4,5,6,7,8,9,10,11,12], "dividend": 2.4, "perTime": 0.2 },
     "00940": { "name": "元大台灣價值高息", "price": 9.6, "months": [1,2,3,4,5,6,7,8,9,10,11,12], "dividend": 0.6, "perTime": 0.05 },
     "00918": { "name": "大華優利高填息", "price": 24.5, "months": [3, 6, 9, 12], "dividend": 3.0, "perTime": 0.75 },
     "00713": { "name": "元大台灣高息低波", "price": 57.2, "months": [3, 6, 9, 12], "dividend": 6.0, "perTime": 1.5 }
