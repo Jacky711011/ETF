@@ -1,4 +1,85 @@
-setup() {
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETF 月月配現金流模擬器</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+
+    <div id="app" class="flex flex-col min-h-screen">
+        <header class="bg-gray-800 p-4 border-b border-gray-700 shadow-md">
+            <h1 class="text-xl font-bold text-orange-500 flex items-center gap-2">
+                🎨 ETF 高股息現金流模擬器
+            </h1>
+        </header>
+
+        <div class="flex flex-col flex-1 p-6 gap-6 max-w-7xl mx-auto w-full">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow shadow-black/40">
+                    <h2 class="text-lg font-semibold mb-4 text-orange-400">🛒 1. 勾選 ETF 購物車</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label v-for="(info, code) in etfDb" :key="code" class="flex items-center gap-2 bg-gray-700 p-2 rounded cursor-pointer hover:bg-gray-600 transition">
+                            <input type="checkbox" :value="code" v-model="selectedEtfs" @change="updateChart" class="w-4 h-4 accent-orange-500">
+                            <span>{{ code }} {{ info.name }}</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow shadow-black/40">
+                    <h2 class="text-lg font-semibold mb-4 text-orange-400">🔄 2. 輸入持有股數</h2>
+                    <div v-if="Object.keys(etfDb).length > 0 && selectedEtfs.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[160px] overflow-y-auto pr-2">
+                        <div v-for="code in selectedEtfs" :key="code" class="flex flex-col gap-1">
+                            <span class="text-xs text-gray-400">{{ code }} {{ etfDb[code].name }}</span>
+                            <div class="flex items-center gap-2">
+                                <input type="number" min="0" step="1" v-model.number="etfShares[code]" @input="updateChart" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-1 text-white focus:outline-none focus:border-orange-500 text-sm">
+                                <span class="text-sm text-gray-400">股</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="text-gray-500 text-sm flex items-center h-full pb-4">
+                        請先勾選左側 ETF 購物車（或等待資料載入中...）
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow shadow-black/40">
+                    <p class="text-sm text-gray-400">投資組合總市值</p>
+                    <p class="text-xl font-bold text-white mt-1">${{ totalMarketValue.toLocaleString() }} 元</p>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow shadow-black/40">
+                    <p class="text-sm text-gray-400">預估年配息收入</p>
+                    <p class="text-xl font-bold text-green-400 mt-1">${{ totalAnnualDividend.toLocaleString() }} 元</p>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow shadow-black/40">
+                    <p class="text-sm text-gray-400">平均每月被動收入</p>
+                    <p class="text-xl font-bold text-orange-400 mt-1">${{ totalMonthlyDividend.toLocaleString() }} 元</p>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow shadow-black/40">
+                    <p class="text-sm text-gray-400">組合綜合殖利率</p>
+                    <p class="text-xl font-bold text-cyan-400 mt-1">{{ averageYield }} %</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 flex-1 flex flex-col min-h-[400px] shadow shadow-black/40">
+                <h3 class="text-lg font-semibold mb-4 text-gray-200">📊 1-12 月現金流分佈長條圖</h3>
+                <div class="relative flex-1">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
                 // 1. 一開始給空物件，等一下從 JSON 讀取
                 const etfDb = ref({}); 
 
@@ -14,20 +95,17 @@ setup() {
                 // 2. 建立網頁載入時讀取 JSON 的邏輯
                 onMounted(async () => {
                     try {
-                        // 讀取同資料夾底下的 json 檔案
                         const response = await fetch('./etf_data.json');
                         etfDb.value = await response.json();
-                        
-                        // 資料讀取成功後，再初始化圖表
                         initChart();
                     } catch (error) {
                         console.error("讀取 ETF 資料失敗:", error);
                     }
                 });
 
-                // 以下計算邏輯因為 etfDb 變成了 Ref，所以裡面用到 etfDb 的地方都要加上 .value
+                // 計算邏輯
                 const totalMarketValue = computed(() => {
-                    if (!etfDb.value["0056"]) return 0; // 確保資料已載入
+                    if (!etfDb.value["0056"]) return 0; 
                     return selectedEtfs.value.reduce((sum, code) => {
                         const shares = etfShares.value[code] || 0;
                         return sum + (shares * etfDb.value[code].price);
@@ -42,7 +120,10 @@ setup() {
                     }, 0);
                 });
 
-                const totalMonthlyDividend = computed(() => Math.round(totalAnnualDividend.value / 12));
+                const totalMonthlyDividend = computed(() => {
+                    return Math.round(totalAnnualDividend.value / 12);
+                });
+
                 const averageYield = computed(() => {
                     if (totalMarketValue.value === 0) return "0.00";
                     return ((totalAnnualDividend.value / totalMarketValue.value) * 100).toFixed(2);
@@ -67,7 +148,6 @@ setup() {
                     chartInstance.update();
                 };
 
-                // 將圖表初始化獨立成一個 function
                 const initChart = () => {
                     const ctx = document.getElementById('cashFlowChart').getContext('2d');
                     chartInstance = new Chart(ctx, {
@@ -98,3 +178,7 @@ setup() {
                     totalAnnualDividend, totalMonthlyDividend, averageYield, updateChart
                 };
             }
+        }).mount('#app');
+    </script>
+</body>
+</html>
