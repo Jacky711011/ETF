@@ -2,12 +2,11 @@ name: Daily ETF Prices Update
 
 on:
   schedule:
-    # 每個禮拜一到五，台灣時間下午 4:30 自動執行 (UTC 8:30)
     - cron: '30 8 * * 1-5'
-  workflow_dispatch: # 這行可以讓我們在網頁上點擊「手動執行」測試
+  workflow_dispatch:
 
 permissions:
-  contents: write # 賦予機器人寫入並更新倉庫檔案的權限
+  contents: write
 
 jobs:
   build:
@@ -35,5 +34,4 @@ jobs:
         git config --global user.name "ETF-Bot"
         git config --global user.email "bot@github.com"
         git add etf_data.json
-        # 如果檔案有變動才提交，沒變動就跳過不報錯
         git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 自動更新 ETF 最新收盤價" && git push)
