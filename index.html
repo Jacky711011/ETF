@@ -1,141 +1,59 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETF 月月配現金流模擬器</title>
-    <!-- 引入 Tailwind CSS (美化畫面) -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- 引入 Vue 3 (處理即時計算) -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <!-- 引入 Chart.js (繪製長條圖) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="bg-gray-900 text-gray-100 min-h-screen">
-
-    <div id="app" class="flex flex-col min-h-screen">
-        <!-- 頂部導覽列 -->
-        <header class="bg-gray-800 p-4 border-b border-gray-700 shadow-md">
-            <h1 class="text-xl font-bold text-orange-500 flex items-center gap-2">
-                🎨 ETF 高股息現金流模擬器
-            </h1>
-        </header>
-
-        <!-- 主內容區 -->
-        <div class="flex flex-col md:flex-row flex-1">
-            <!-- 左側控制面板 -->
-            <aside class="w-full md:w-80 bg-gray-800 p-6 border-r border-gray-700 flex flex-col gap-6">
-                <div>
-                    <h2 class="text-lg font-semibold mb-3 text-orange-400">🛒 1. 勾選 ETF 購物車</h2>
-                    <div class="flex flex-col gap-2">
-                        <label v-for="(info, code) in etfDb" :key="code" class="flex items-center gap-2 bg-gray-700 p-2 rounded cursor-pointer hover:bg-gray-600 transition">
-                            <input type="checkbox" :value="code" v-model="selectedEtfs" @change="updateChart" class="w-4 h-4 accent-orange-500">
-                            <span>{{ code }} {{ info.name }}</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div v-if="selectedEtfs.length > 0">
-                    <h2 class="text-lg font-semibold mb-3 text-orange-400">🔄 2. 輸入持有張數</h2>
-                    <div class="flex flex-col gap-3">
-                        <div v-for="code in selectedEtfs" :key="code" class="flex flex-col gap-1">
-                            <span class="text-sm text-gray-400">{{ code }} {{ etfDb[code].name }}</span>
-                            <div class="flex items-center gap-2">
-                                <input type="number" min="0" v-model.number="etfShares[code]" @input="updateChart" class="w-full bg-gray-900 border border-gray-600 rounded px-3 py-1 text-white focus:outline-none focus:border-orange-500">
-                                <span class="text-sm text-gray-400">張</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </aside>
-
-            <!-- 右側主畫面看板 -->
-            <main class="flex-1 p-6 flex flex-col gap-6">
-                <!-- 綜合資產 KPI 看板 -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow shadow-black/40">
-                        <p class="text-sm text-gray-400">投資組合總市值</p>
-                        <p class="text-xl font-bold text-white mt-1">${{ totalMarketValue.toLocaleString() }} 元</p>
-                    </div>
-                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow shadow-black/40">
-                        <p class="text-sm text-gray-400">預估年配息收入</p>
-                        <p class="text-xl font-bold text-green-400 mt-1">${{ totalAnnualDividend.toLocaleString() }} 元</p>
-                    </div>
-                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow shadow-black/40">
-                        <p class="text-sm text-gray-400">平均每月被動收入</p>
-                        <p class="text-xl font-bold text-orange-400 mt-1">${{ totalMonthlyDividend.toLocaleString() }} 元</p>
-                    </div>
-                    <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow shadow-black/40">
-                        <p class="text-sm text-gray-400">組合綜合殖利率</p>
-                        <p class="text-xl font-bold text-cyan-400 mt-1">{{ averageYield }} %</p>
-                    </div>
-                </div>
-
-                <!-- 核心：1-12月現金流圖表 -->
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 flex-1 flex flex-col min-h-[350px]">
-                    <h3 class="text-lg font-semibold mb-4 text-gray-200">📊 1-12 月現金流分佈長條圖</h3>
-                    <div class="relative flex-1">
-                        <canvas id="cashFlowChart"></canvas>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
-
-    <!-- 前端邏輯與圖表控制 -->
-    <script>
-        const { createApp, ref, computed, onMounted } = Vue;
-
-        createApp({
-            setup() {
-                // 靜態 ETF 資料庫（可依市況自行調整數值）
-                const etfDb = {
-                    "0056": { name: "元大高股息", price: 40.5, months: [1, 4, 7, 10], dividend: 3.6, perTime: 0.9 },
-                    "00878": { name: "國泰永續高股息", price: 23.1, months: [2, 5, 8, 11], dividend: 1.46, perTime: 0.365 },
-                    "00919": { name: "群益台灣精選高息", price: 25.8, months: [3, 6, 9, 12], dividend: 2.8, perTime: 0.7 },
-                    "00929": { name: "復華台灣科技優息", price: 19.5, months: [1,2,3,4,5,6,7,8,9,10,11,12], dividend: 2.4, perTime: 0.2 }
-                };
+setup() {
+                // 1. 一開始給空物件，等一下從 JSON 讀取
+                const etfDb = ref({}); 
 
                 // 使用者狀態
-                const selectedEtfs = ref(["0056", "00878", "00919"]); // 預設勾選三檔互補
-                const etfShares = ref({ "0056": 10, "00878": 15, "00919": 12, "00929": 0 });
+                const selectedEtfs = ref(["0056", "00878", "00919", "00929"]);
+                const etfShares = ref({ 
+                    "0056": 10000, "00878": 15000, "00919": 12000, "00929": 12000,
+                    "00940": 0, "00918": 0, "00713": 0
+                });
 
-                // 圖表實例變數
                 let chartInstance = null;
 
-                // 計算：總市值
+                // 2. 建立網頁載入時讀取 JSON 的邏輯
+                onMounted(async () => {
+                    try {
+                        // 讀取同資料夾底下的 json 檔案
+                        const response = await fetch('./etf_data.json');
+                        etfDb.value = await response.json();
+                        
+                        // 資料讀取成功後，再初始化圖表
+                        initChart();
+                    } catch (error) {
+                        console.error("讀取 ETF 資料失敗:", error);
+                    }
+                });
+
+                // 以下計算邏輯因為 etfDb 變成了 Ref，所以裡面用到 etfDb 的地方都要加上 .value
                 const totalMarketValue = computed(() => {
+                    if (!etfDb.value["0056"]) return 0; // 確保資料已載入
                     return selectedEtfs.value.reduce((sum, code) => {
-                        const shares = (etfShares.value[code] || 0) * 1000;
-                        return sum + (shares * etfDb[code].price);
+                        const shares = etfShares.value[code] || 0;
+                        return sum + (shares * etfDb.value[code].price);
                     }, 0);
                 });
 
-                // 計算：年配息
                 const totalAnnualDividend = computed(() => {
+                    if (!etfDb.value["0056"]) return 0;
                     return selectedEtfs.value.reduce((sum, code) => {
-                        const shares = (etfShares.value[code] || 0) * 1000;
-                        return sum + (shares * etfDb[code].dividend);
+                        const shares = etfShares.value[code] || 0;
+                        return sum + (shares * etfDb.value[code].dividend);
                     }, 0);
                 });
 
-                // 計算：月均配息
-                const totalMonthlyDividend = computed(() => {
-                    return Math.round(totalAnnualDividend.value / 12);
-                });
-
-                // 計算：平均殖利率
+                const totalMonthlyDividend = computed(() => Math.round(totalAnnualDividend.value / 12));
                 const averageYield = computed(() => {
                     if (totalMarketValue.value === 0) return "0.00";
                     return ((totalAnnualDividend.value / totalMarketValue.value) * 100).toFixed(2);
                 });
 
-                // 計算：每個月實際領到的配息陣列 (1-12月)
                 const monthlyData = computed(() => {
                     let months = new Array(12).fill(0);
+                    if (!etfDb.value["0056"]) return months;
                     selectedEtfs.value.forEach(code => {
-                        const etf = etfDb[code];
-                        const shares = (etfShares.value[code] || 0) * 1000;
+                        const etf = etfDb.value[code];
+                        const shares = etfShares.value[code] || 0;
                         etf.months.forEach(m => {
                             months[m - 1] += Math.round(shares * etf.perTime);
                         });
@@ -143,14 +61,14 @@
                     return months;
                 });
 
-                // 初始化與更新圖表功能
                 const updateChart = () => {
                     if (!chartInstance) return;
                     chartInstance.data.datasets[0].data = monthlyData.value;
                     chartInstance.update();
                 };
 
-                onMounted(() => {
+                // 將圖表初始化獨立成一個 function
+                const initChart = () => {
                     const ctx = document.getElementById('cashFlowChart').getContext('2d');
                     chartInstance = new Chart(ctx, {
                         type: 'bar',
@@ -159,43 +77,24 @@
                             datasets: [{
                                 label: '預估配息金額 (元)',
                                 data: monthlyData.value,
-                                backgroundColor: '#f97316', // 亮橘色
-                                hoverBackgroundColor: '#ea580c',
+                                backgroundColor: '#f97316',
                                 borderRadius: 6
                             }]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false }
-                            },
+                            plugins: { legend: { display: false } },
                             scales: {
-                                y: {
-                                    grid: { color: '#374151' },
-                                    ticks: { color: '#9ca3af' }
-                                },
-                                x: {
-                                    grid: { display: false },
-                                    ticks: { color: '#9ca3af' }
-                                }
+                                y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } },
+                                x: { grid: { display: false }, ticks: { color: '#9ca3af' } }
                             }
                         }
                     });
-                });
+                };
 
                 return {
-                    etfDb,
-                    selectedEtfs,
-                    etfShares,
-                    totalMarketValue,
-                    totalAnnualDividend,
-                    totalMonthlyDividend,
-                    averageYield,
-                    updateChart
+                    etfDb, selectedEtfs, etfShares, totalMarketValue,
+                    totalAnnualDividend, totalMonthlyDividend, averageYield, updateChart
                 };
             }
-        }).mount('#app');
-    </script>
-</body>
-</html>
