@@ -8,16 +8,28 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen">
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
 
-    <div id="app" class="flex flex-col min-h-screen">
-        <header class="bg-gray-800 p-4 border-b border-gray-700 shadow-md">
-            <h1 class="text-xl font-bold text-orange-500 flex items-center gap-2">
+    <div id="app" class="flex flex-col min-h-screen flex-1">
+        <header class="bg-gray-800 p-4 border-b border-gray-700 shadow-md flex flex-col xl:flex-row justify-between items-center gap-4">
+            <h1 class="text-xl font-bold text-orange-500 flex items-center gap-2 select-none">
                 🎨 ETF 高股息現金流模擬器
             </h1>
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <a href="https://www.facebook.com/profile.php?id=61578355122271" target="_blank" class="flex items-center gap-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow">
+                    📘 姜太的程式交易 FB
+                </a>
+                <a href="https://www.youtube.com/@Caption-b4u" target="_blank" class="flex items-center gap-1 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow">
+                    📺 觀看 YouTube 頻道
+                </a>
+                <a href="https://shopee.tw/_bear_wolf_" target="_blank" class="flex items-center gap-1 bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow">
+                    🛍️ 姜太數位商城 蝦皮
+                </a>
+            </div>
         </header>
 
         <div class="flex flex-col flex-1 p-6 gap-6 max-w-7xl mx-auto w-full">
+            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow shadow-black/40">
                     <h2 class="text-lg font-semibold mb-4 text-orange-400">🛒 1. 勾選 ETF 購物車</h2>
@@ -65,12 +77,34 @@
                 </div>
             </div>
 
-            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 flex-1 flex flex-col min-h-[400px] shadow shadow-black/40">
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 flex-1 flex flex-col min-h-[380px] shadow shadow-black/40">
                 <h3 class="text-lg font-semibold mb-4 text-gray-200">📊 1-12 月現金流分佈長條圖</h3>
                 <div class="relative flex-1">
                     <canvas id="cashFlowChart"></canvas>
                 </div>
             </div>
+
+            <footer class="bg-gray-800/60 border border-gray-700/60 p-5 rounded-xl text-center shadow shadow-black/20 flex flex-col lg:flex-row justify-between items-center gap-4">
+                <div class="text-left">
+                    <h4 class="text-base font-semibold text-orange-400 flex items-center gap-1.5">
+                        🤖 關於本工具與量化開發
+                    </h4>
+                    <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+                        本網頁數據由後端 Python 自動化機器人每日定時更新。想要獲取更強大的台指量化策略指標、自動化理財工具？歡迎關注我！
+                    </p>
+                </div>
+                <div class="flex flex-wrap justify-center items-center gap-4 shrink-0">
+                    <a href="https://www.facebook.com/profile.php?id=61578355122271" target="_blank" class="text-xs text-blue-400 hover:text-blue-300 font-medium underline underline-offset-4 transition">
+                        📘 FB 粉絲專頁 ➔
+                    </a>
+                    <a href="https://www.youtube.com/@Caption-b4u" target="_blank" class="text-xs text-red-400 hover:text-red-300 font-medium underline underline-offset-4 transition">
+                        📺 YouTube 頻道 ➔
+                    </a>
+                    <a href="https://shopee.tw/_bear_wolf_" target="_blank" class="text-xs bg-orange-600 hover:bg-orange-500 text-white font-semibold px-2.5 py-1 rounded transition shadow">
+                        🛍️ 逛逛姜太的蝦皮賣場 ➔
+                    </a>
+                </div>
+            </footer>
         </div>
     </div>
 
